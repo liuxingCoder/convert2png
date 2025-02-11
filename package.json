@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "s": "node convert.js",
-    "pack:win": "electron-packager . 3dmine-image-converter --platform=win32 --arch=x64 --out=dist/ --icon=logo.ico",
+    "pack:win": "electron-packager . image-converter --platform=win32 --arch=x64 --out=dist/ --icon=logo.ico",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
