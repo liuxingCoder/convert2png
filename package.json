@@ -1,0 +1,23 @@
+{
+  "name": "convert",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "s": "node convert.js",
+    "pack:win": "electron-packager . 3dmine-image-converter --platform=win32 --arch=x64 --out=dist/ --icon=logo.ico",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "liuxingCoder",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "electron": "^34.1.1",
+    "electron-packager": "^17.1.2"
+  }
+}

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>图像转化工具</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f5f7;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        color: #333;
+        overflow-y: scroll;
+        flex-direction: column;
+      }
+      #container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 70%;
+        max-width: 900px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        margin-bottom: 30px;
+        margin-top: 30px;
+      }
+      #drop-area {
+        width: 100%;
+        height: 250px;
+        border: 2px dashed #6c757d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #6c757d;
+        font-size: 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+      }
+      #drop-area.dragover {
+        background-color: #e2e6ea;
+        border-color: #28a745;
+      }
+      #output-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 20px;
+        width: 100%;
+        gap: 15px;
+      }
+      .output-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 20px;
+        background-color: #f9fafb;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+      .output-item:hover {
+        transform: translateY(-5px);
+      }
+      .output-image {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+      }
+      .output-image:hover {
+        transform: scale(1.05);
+      }
+      #save-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin-top: 15px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      #save-button:hover {
+        background-color: #218838;
+      }
+      #file-input {
+        display: none;
+      }
+      #drop-area span {
+        font-weight: 500;
+      }
+      /* 过渡动画 */
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+      .fade-in {
+        animation: fadeIn 1s ease-out forwards;
+      }
+
+      /* Footer 样式 */
+      footer {
+        width: 100%;
+        background-color: #343a40;
+        color: #fff;
+        padding: 15px 0;
+        text-align: center;
+        font-size: 14px;
+        margin-top: auto;
+        border-top: 1px solid #444;
+      }
+      footer span {
+        font-weight: 500;
+        color: #28a745;
+      }
+      #clear-button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin-top: 20px;
+        font-size: 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      #clear-button:hover {
+        background-color: #c82333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="drop-area" class="fade-in">
+        <span
+          >拖拽或<span style="color: #28a745">点击选择</span
+          >需要转化的图片</span
+        >
+        <input type="file" id="file-input" multiple />
+      </div>
+      <div id="output-container"></div>
+      <button id="clear-button">清空所有结果</button>
+    </div>
+
+    <footer>
+      <span>图片格式转化工具 v0.0.1</span>
+    </footer>
+
+    <script>
+      const { ipcRenderer } = require("electron");
+
+      const dropArea = document.getElementById("drop-area");
+      const fileInput = document.getElementById("file-input");
+      const outputContainer = document.getElementById("output-container");
+      const clearButton = document.getElementById("clear-button");
+
+      // 监听点击区域选择文件
+      dropArea.addEventListener("click", () => {
+        fileInput.click();
+      });
+
+      // 监听拖拽事件
+      dropArea.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        dropArea.classList.add("dragover");
+      });
+
+      dropArea.addEventListener("dragleave", () => {
+        dropArea.classList.remove("dragover");
+      });
+
+      dropArea.addEventListener("drop", (event) => {
+        event.preventDefault();
+        dropArea.classList.remove("dragover");
+        handleFiles(event.dataTransfer.files);
+      });
+
+      // 监听文件选择事件
+      fileInput.addEventListener("change", (event) => {
+        handleFiles(event.target.files);
+      });
+
+      // 处理文件
+      function handleFiles(files) {
+        const fileList = Array.from(files);
+        fileList.forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const fileBuffer = e.target.result;
+            ipcRenderer.send("convert-image", fileBuffer, file.name);
+          };
+          reader.readAsArrayBuffer(file);
+        });
+      }
+
+      // 监听转换成功的回调
+      ipcRenderer.on(
+        "conversion-success",
+        (event, convertedFileBuffer, fileName) => {
+          const blob = new Blob([convertedFileBuffer], { type: "image/png" });
+          const url = URL.createObjectURL(blob);
+
+          const outputItem = document.createElement("div");
+          outputItem.classList.add("output-item");
+
+          const outputImage = document.createElement("img");
+          outputImage.classList.add("output-image");
+          outputImage.src = url;
+
+          const saveButton = document.createElement("button");
+          saveButton.innerText = "保存转化后_ " + fileName;
+          saveButton.classList.add("save-button");
+          saveButton.addEventListener("click", () => {
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName.split(".")[0] + "_converted.png";
+            link.click();
+          });
+
+          outputItem.appendChild(outputImage);
+          outputItem.appendChild(saveButton);
+          outputContainer.appendChild(outputItem);
+        }
+      );
+
+      // 清空所有转换结果
+      clearButton.addEventListener("click", () => {
+        outputContainer.innerHTML = ""; // 清空所有转换结果
+      });
+    </script>
+  </body>
+</html>
